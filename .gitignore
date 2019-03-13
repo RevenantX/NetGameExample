@@ -1,0 +1,7 @@
+Library/
+Logs/
+obj/
+Temp/
+.vs/
+.idea/
+.git/
