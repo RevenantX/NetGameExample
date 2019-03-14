@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using Code.Server;
 using Code.Shared;
@@ -15,6 +13,7 @@ public class ServerLogic : MonoBehaviour, INetEventListener
     private ServerPlayer[] _players;
     private int _playersCount;
     private const int MaxPlayers = 8;
+    private LogicTimer _logicTimer;
     private readonly NetDataWriter _cachedWriter = new NetDataWriter();
 
     private MovementPacket _cachedCommand = new MovementPacket();
@@ -24,10 +23,12 @@ public class ServerLogic : MonoBehaviour, INetEventListener
         if (_netManager.IsRunning)
             return;
         _netManager.Start(9000);
+        _logicTimer.Start();
     }
     private void Awake()
     {
         DontDestroyOnLoad(gameObject);
+        _logicTimer = new LogicTimer(OnLogicUpdate);
         _players = new ServerPlayer[MaxPlayers];
         _packetProcessor = new NetPacketProcessor();
         _packetProcessor.SubscribeReusable<JoinPacket, NetPeer>(OnJoinReceived);
@@ -40,15 +41,21 @@ public class ServerLogic : MonoBehaviour, INetEventListener
     private void OnDestroy()
     {
         _netManager.Stop();
+        _logicTimer.Stop();
+    }
+
+    private void OnLogicUpdate()
+    {
+        for (int i = 0; i < _playersCount; i++)
+        {
+            _players[i].Update(LogicTimer.FixedDelta);
+        }
     }
 
     private void Update()
     {
         _netManager.PollEvents();
-        for (int i = 0; i < _playersCount; i++)
-        {
-            _players[i].Update(NetworkGeneral.FixedDelta);
-        }
+        _logicTimer.Update();
     }
 
     private NetDataWriter WritePacket<T>(T packet) where T : class, new()
@@ -68,6 +75,10 @@ public class ServerLogic : MonoBehaviour, INetEventListener
         
         player.Spawn(new Vector2(Random.Range(-2f, 2f), Random.Range(-2f, 2f)));
 
+        //Send join accept
+        var ja = new JoinAcceptPacket {Id = peer.Id};
+        peer.Send(WritePacket(ja), DeliveryMethod.ReliableOrdered);
+        
         //Send to old players info about new player
         var pj = new PlayerJoinedPacket();
         pj.UserName = joinPacket.UserName;
@@ -91,7 +102,7 @@ public class ServerLogic : MonoBehaviour, INetEventListener
             return;
         _cachedCommand.Deserialize(reader);
         var player = (ServerPlayer) peer.Tag;
-        player.Move(_cachedCommand, NetworkGeneral.FixedDelta);
+        player.Move(_cachedCommand, LogicTimer.FixedDelta);
     }
 
     void INetEventListener.OnPeerConnected(NetPeer peer)

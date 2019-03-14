@@ -14,13 +14,18 @@ public class ClientLogic : MonoBehaviour, INetEventListener
     private NetManager _netManager;
     private NetDataWriter _writer;
     private NetPacketProcessor _packetProcessor;
-    private Dictionary<long, ClientPlayer> _players;
+    private Dictionary<long, BasePlayer> _players;
+    private ClientPlayer _clientPlayer;
+    private LogicTimer _logicTimer;
     private void Awake()
     {
         DontDestroyOnLoad(gameObject);
-        _players = new Dictionary<long, ClientPlayer>();
+        _logicTimer = new LogicTimer(OnLogicUpdate);
+        _players = new Dictionary<long, BasePlayer>();
         _writer = new NetDataWriter();
         _packetProcessor = new NetPacketProcessor();
+        _packetProcessor.SubscribeReusable<PlayerJoinedPacket>(OnPlayerJoined);
+        _packetProcessor.SubscribeReusable<JoinAcceptPacket>(OnJoinAccept);
         _netManager = new NetManager(this)
         {
             AutoRecycle = true
@@ -28,14 +33,32 @@ public class ClientLogic : MonoBehaviour, INetEventListener
         _netManager.Start();
     }
 
+    private void OnLogicUpdate()
+    {
+        if(_clientPlayer != null)
+            _clientPlayer.Update(LogicTimer.FixedDelta);
+    }
+
     private void Update()
     {
         _netManager.PollEvents();
+        _logicTimer.Update();
     }
 
     private void OnDestroy()
     {
         _netManager.Stop();
+    }
+
+    private void OnPlayerJoined(PlayerJoinedPacket packet)
+    {
+        _players.Add(packet.Id, new RemotePlayer());
+    }
+
+    private void OnJoinAccept(JoinAcceptPacket packet)
+    {
+        Debug.Log("[C] Join accept. Received player id: " + packet.Id);
+        _clientPlayer = new ClientPlayer(packet.Id);
     }
 
     private void SendPacket<T>(T packet, DeliveryMethod deliveryMethod) where T : class, new()
@@ -51,10 +74,12 @@ public class ClientLogic : MonoBehaviour, INetEventListener
         Debug.Log("[C] Connected to server: " + peer.EndPoint);
         Random r = new Random();
         SendPacket(new JoinPacket{ UserName = Environment.MachineName + " " + r.Next(100000) }, DeliveryMethod.ReliableOrdered);
+        _logicTimer.Start();
     }
 
     void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
     {
+        _logicTimer.Stop();
         Debug.Log("[C] Disconnected from server: " + disconnectInfo.Reason);
     }
 
@@ -72,6 +97,9 @@ public class ClientLogic : MonoBehaviour, INetEventListener
         switch (pt)
         {
             case PacketType.Spawn:
+                break;
+            case PacketType.Serialized:
+                _packetProcessor.ReadAllPackets(reader);
                 break;
             default:
                 Debug.Log("Unhandled packet: " + pt);

@@ -8,6 +8,11 @@ namespace Code.Shared
         public string UserName { get; set; }
     }
 
+    public class JoinAcceptPacket
+    {
+        public long Id { get; set; }
+    }
+
     public class PlayerJoinedPacket
     {
         public string UserName { get; set; }
