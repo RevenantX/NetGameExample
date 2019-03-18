@@ -4,9 +4,20 @@ namespace Code.Shared
 {
     public class BasePlayer
     {
-        public string Name;
-        private Vector2 _position;
-        private float _rotation;
+        public readonly string Name;
+        protected Vector2 _position;
+        protected float _rotation;
+        protected byte _health;
+
+        public bool IsAlive
+        {
+            get { return _health > 0; }
+        }
+
+        public byte Health
+        {
+            get { return _health; }
+        }
 
         public Vector2 Position
         {
@@ -18,15 +29,33 @@ namespace Code.Shared
             get { return _rotation; }
         }
 
+        public BasePlayer(string name)
+        {
+            Name = name;
+        }
+
         public virtual void Spawn(Vector2 position)
         {
             _position = position;
             _rotation = 0;
+            _health = 100;
         }
 
-        public void Move(MovementPacket command, float delta)
+        public void ApplyInput(PlayerInputPacket command, float delta)
         {
-            _position += command.Velocity.normalized * delta;
+            Vector2 velocity = Vector2.zero;
+            
+            if ((command.Keys & MovementKeys.Up) != 0)
+                velocity.y = -1f;
+            if ((command.Keys & MovementKeys.Down) != 0)
+                velocity.y = 1f;
+            
+            if ((command.Keys & MovementKeys.Left) != 0)
+                velocity.x = -1f;
+            if ((command.Keys & MovementKeys.Right) != 0)
+                velocity.x = 1f;
+            
+            _position += velocity.normalized * delta;
             _rotation = command.Rotation;
         }
 

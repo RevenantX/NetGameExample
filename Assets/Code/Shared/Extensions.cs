@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Code.Shared
 {
     public static class Extensions
-    {
+    {      
         public static void Put(this NetDataWriter writer, Vector2 vector)
         {
             writer.Put(vector.x);

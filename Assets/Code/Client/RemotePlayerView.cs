@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Code.Client
 {
-    public class PlayerView : MonoBehaviour
+    public class RemotePlayerView : MonoBehaviour
     {
         
     }

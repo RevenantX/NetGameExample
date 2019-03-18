@@ -10,7 +10,7 @@ namespace Code.Server
 
         public readonly NetPeer AssociatedPeer;
 
-        public ServerPlayer(NetPeer peer)
+        public ServerPlayer(string name, NetPeer peer) : base(name)
         {
             peer.Tag = this;
             AssociatedPeer = peer;
@@ -21,19 +21,13 @@ namespace Code.Server
             
             //Draw rotating cross as server player
             const float sz = 0.1f;
-            float sint = Mathf.Sin(Rotation);
-            float cost = Mathf.Cos(Rotation);
-            float siny = Position.y * sint;
-            float cosx = Position.x * cost;
-            float cosy = Position.y * cost;
-            float sinx = Position.x * sint;
             Debug.DrawLine(
-                new Vector2((Position.x - sz)*cost - siny, (Position.x - sz)*sint + cosy ),
-                new Vector2((Position.x + sz)*cost - siny, (Position.x + sz)*sint + cosy ), 
+                new Vector2(Position.x - sz, Position.y ),
+                new Vector2(Position.x + sz, Position.y ), 
                 Color.green);
             Debug.DrawLine(
-                new Vector2(cosx - (Position.y - sz)*sint, sinx + (Position.y - sz)*cost ),
-                new Vector2(cosx - (Position.y + sz)*sint, sinx + (Position.y + sz)*cost ), 
+                new Vector2(Position.x, Position.y - sz ),
+                new Vector2(Position.x, Position.y + sz ), 
                 Color.green);
             
         }
