@@ -2,6 +2,7 @@ Library/
 Logs/
 obj/
 Temp/
+Build/
 .vs/
 .idea/
 .git/

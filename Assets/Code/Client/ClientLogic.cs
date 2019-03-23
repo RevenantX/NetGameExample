@@ -7,6 +7,7 @@ using Code.Shared;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using UnityEngine;
+using UnityEngine.UI;
 using Random = System.Random;
 
 namespace Code.Client
@@ -15,6 +16,7 @@ namespace Code.Client
     {
         [SerializeField] private ClientPlayerView _clientPlayerViewPrefab;
         [SerializeField] private RemotePlayerView _remotePlayerViewPrefab;
+        [SerializeField] private Text _debugText;
 
         private NetManager _netManager;
         private NetDataWriter _writer;
@@ -23,6 +25,8 @@ namespace Code.Client
         private ClientPlayer _clientPlayer;
         private string _userName;
         private ServerState _cachedServerState;
+        private ushort _lastServerTick;
+        private NetPeer _server;
 
         public static LogicTimer LogicTimer { get; private set; }
 
@@ -40,6 +44,7 @@ namespace Code.Client
             _packetProcessor.RegisterNestedType<PlayerState>();
             _packetProcessor.SubscribeReusable<PlayerJoinedPacket>(OnPlayerJoined);
             _packetProcessor.SubscribeReusable<JoinAcceptPacket>(OnJoinAccept);
+            _packetProcessor.SubscribeReusable<PlayerLeavedPacket>(OnPlayerLeaved);
             _netManager = new NetManager(this)
             {
                 AutoRecycle = true
@@ -50,15 +55,15 @@ namespace Code.Client
         private void OnLogicUpdate()
         {
             foreach (var kv in _players)
-            {
                 kv.Value.Update(LogicTimer.FixedDelta);
-            }
         }
 
         private void Update()
         {
             _netManager.PollEvents();
             LogicTimer.Update();
+            if(_clientPlayer != null)
+                _debugText.text = string.Format($"LastServerTick: {_lastServerTick}\nStoredCommands: {_clientPlayer.StoredCommands}");
         }
 
         private void OnDestroy()
@@ -68,15 +73,43 @@ namespace Code.Client
 
         private void OnPlayerJoined(PlayerJoinedPacket packet)
         {
-            _players.Add(packet.InitialPlayerState.Id, new RemotePlayer(packet.UserName, packet.InitialPlayerState));
+            Debug.Log($"[C] Player joined: {packet.UserName}");
+            var remotePlayer = new RemotePlayer(packet.UserName, packet.InitialPlayerState);
+            RemotePlayerView.Create(_remotePlayerViewPrefab, remotePlayer);
+            _players.Add(packet.InitialPlayerState.Id, remotePlayer);
         }
 
         private void OnServerState()
         {
-            for (int i = 0; i < _cachedServerState.PlayerStates.Length; i++)
+            //skip duplicate or old because we received that packet unreliably
+            if (NetworkGeneral.SeqDiff(_cachedServerState.Tick, _lastServerTick) <= 0)
+                return;
+            _lastServerTick = _cachedServerState.Tick;
+            
+            for (int i = 0; i < _cachedServerState.PlayerStatesCount; i++)
             {
-                //servstate
+                var state = _cachedServerState.PlayerStates[i];
+                if(!_players.TryGetValue(state.Id, out var player))
+                    continue;
+
+                if (player == _clientPlayer)
+                {
+                    _clientPlayer.ReceiveServerState(_cachedServerState, state);
+                }
+                else
+                {
+                    var rp = (RemotePlayer)player;
+                    rp.OnPlayerState(state);
+                }
             }
+        }
+
+        private void OnPlayerLeaved(PlayerLeavedPacket packet)
+        {
+            if(!_players.TryGetValue(packet.Id, out var player))
+                return;
+            Debug.Log($"[C] Player leaved: {player.Name}");
+            _players.Remove(packet.Id);
         }
 
         private void OnJoinAccept(JoinAcceptPacket packet)
@@ -89,29 +122,36 @@ namespace Code.Client
 
         public void SendPacketSerializable<T>(PacketType type, T packet, DeliveryMethod deliveryMethod) where T : INetSerializable
         {
+            if (_server == null)
+                return;
             _writer.Reset();
             _writer.Put((byte)type);
             packet.Serialize(_writer);
-            _netManager.FirstPeer.Send(_writer, deliveryMethod);
+            _server.Send(_writer, deliveryMethod);
         }
 
         public void SendPacket<T>(T packet, DeliveryMethod deliveryMethod) where T : class, new()
         {
+            if (_server == null)
+                return;
             _writer.Reset();
             _writer.Put((byte) PacketType.Serialized);
             _packetProcessor.Write(_writer, packet);
-            _netManager.FirstPeer.Send(_writer, deliveryMethod);
+            _server.Send(_writer, deliveryMethod);
         }
 
         void INetEventListener.OnPeerConnected(NetPeer peer)
         {
             Debug.Log("[C] Connected to server: " + peer.EndPoint);
+            _server = peer;
+            
             SendPacket(new JoinPacket {UserName = _userName}, DeliveryMethod.ReliableOrdered);
             LogicTimer.Start();
         }
 
         void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
+            _server = null;
             LogicTimer.Stop();
             Debug.Log("[C] Disconnected from server: " + disconnectInfo.Reason);
         }

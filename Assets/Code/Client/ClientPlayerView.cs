@@ -9,8 +9,6 @@ namespace Code.Client
         [SerializeField] private TextMesh _name;
         private ClientPlayer _player;
         private Camera _mainCamera;
-        private Vector2 _lastPlayerPosition;
-        private float _lastPlayerRotation;
 
         public static void Create(ClientPlayerView prefab, ClientPlayer player)
         {
@@ -34,8 +32,10 @@ namespace Code.Client
             float rotation = Mathf.Atan2(dir.y, dir.x);
             _player.SetInput(velocty, rotation, fire > 0f);
 
-            transform.position = _player.Position;
-            transform.rotation = Quaternion.Euler(0f, 0f, _player.Rotation * Mathf.Rad2Deg);
+            float lerpT = ClientLogic.LogicTimer.LerpAlpha;
+            transform.position = Vector2.Lerp(_player.LastPosition, _player.Position, lerpT);
+            float angle = Mathf.Lerp(_player.LastRotation, _player.Rotation, lerpT);
+            transform.rotation = Quaternion.Euler(0f, 0f, angle * Mathf.Rad2Deg );
         }
     }
 }

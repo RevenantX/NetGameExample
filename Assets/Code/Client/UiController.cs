@@ -27,6 +27,7 @@ namespace Code.Client
         public void OnConnectClick()
         {
             _clientLogic.Connect(_ipField.text);
+            _uiObject.SetActive(false);
         }
     }
 }

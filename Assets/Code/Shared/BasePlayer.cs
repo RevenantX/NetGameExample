@@ -5,6 +5,9 @@ namespace Code.Shared
     public class BasePlayer
     {
         public readonly string Name;
+
+        private float _speed = 3f;
+        
         protected Vector2 _position;
         protected float _rotation;
         protected byte _health;
@@ -41,7 +44,7 @@ namespace Code.Shared
             _health = 100;
         }
 
-        public void ApplyInput(PlayerInputPacket command, float delta)
+        public virtual void ApplyInput(PlayerInputPacket command, float delta)
         {
             Vector2 velocity = Vector2.zero;
             
@@ -55,7 +58,7 @@ namespace Code.Shared
             if ((command.Keys & MovementKeys.Right) != 0)
                 velocity.x = 1f;
             
-            _position += velocity.normalized * delta;
+            _position += velocity.normalized * _speed * delta;
             _rotation = command.Rotation;
         }
 

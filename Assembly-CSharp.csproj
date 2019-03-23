@@ -69,6 +69,7 @@
     <Compile Include="Assets\Code\Shared\BasePlayer.cs" />
     <Compile Include="Assets\Code\Shared\Extensions.cs" />
     <Compile Include="Assets\Code\Shared\GamePackets.cs" />
+    <Compile Include="Assets\Code\Shared\LiteRingBuffer.cs" />
     <Compile Include="Assets\Code\Shared\LogicTimer.cs" />
     <Compile Include="Assets\Code\Shared\NetworkGeneral.cs" />
     <None Include="Assets\Libs\LiteNetLib.xml" />

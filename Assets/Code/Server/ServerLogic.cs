@@ -20,6 +20,7 @@ namespace Code.Server
         private ushort _serverTick;
 
         private PlayerInputPacket _cachedCommand = new PlayerInputPacket();
+        private ServerState _serverState = new ServerState();
 
         public void StartServer()
         {
@@ -58,14 +59,39 @@ namespace Code.Server
 
         private void OnLogicUpdate()
         {
-            _serverTick++;
-            //bool sendPlayerStates = _serverTick % 2 == 0;
-            //PlayerState ps = new PlayerState();
+            _serverTick = (ushort)((_serverTick + 1) % NetworkGeneral.MaxGameSequence);
+
+            if (_serverState.PlayerStates == null || _serverState.PlayerStates.Length < _playersCount)
+                _serverState.PlayerStates = new PlayerState[_playersCount];
             
             for (int i = 0; i < _playersCount; i++)
             {
                 var p = _players[i];
                 p.Update(LogicTimer.FixedDelta);
+                _serverState.PlayerStates[i] = p.NetworkState;
+            }
+
+            if (_serverTick % 2 == 0)
+                SendServerState();
+        }
+
+        private void SendServerState()
+        {         
+            _serverState.Tick = _serverTick;
+            
+            for (int i = 0; i < _playersCount; i++)
+            {
+                var p = _players[i]; 
+                int statesMax = p.AssociatedPeer.GetMaxSinglePacketSize(DeliveryMethod.Unreliable) - ServerState.HeaderSize;
+                statesMax /= PlayerState.Size;
+                
+                for (int s = 0; s < (_playersCount-1)/statesMax + 1; s++)
+                {
+                    //TODO: change
+                    _serverState.PlayerStatesCount = _playersCount;
+                    _serverState.StartState = s * statesMax;
+                    p.AssociatedPeer.Send(WriteSerializable(PacketType.ServerState, _serverState), DeliveryMethod.Unreliable);
+                }
             }
         }
 
@@ -73,6 +99,14 @@ namespace Code.Server
         {
             _netManager.PollEvents();
             _logicTimer.Update();
+        }
+        
+        private NetDataWriter WriteSerializable<T>(PacketType type, T packet) where T : struct, INetSerializable
+        {
+            _cachedWriter.Reset();
+            _cachedWriter.Put((byte) type);
+            packet.Serialize(_cachedWriter);
+            return _cachedWriter;
         }
 
         private NetDataWriter WritePacket<T>(T packet) where T : class, new()
@@ -95,19 +129,12 @@ namespace Code.Server
             //Send join accept
             var ja = new JoinAcceptPacket {Id = peer.Id};
             peer.Send(WritePacket(ja), DeliveryMethod.ReliableOrdered);
-            
-            //playerstate
-            var ps = new PlayerState();
 
             //Send to old players info about new player
             var pj = new PlayerJoinedPacket();
             pj.UserName = joinPacket.UserName;
             pj.NewPlayer = true;
-            ps.Id = (byte)peer.Id;
-            ps.Health = player.Health;
-            ps.Position = player.Position;
-            ps.Rotation = player.Rotation;
-            pj.InitialPlayerState = ps;
+            pj.InitialPlayerState = player.NetworkState;
             _netManager.SendToAll(WritePacket(pj), DeliveryMethod.ReliableOrdered, peer);
 
             //Send to new player info about old players
@@ -116,11 +143,7 @@ namespace Code.Server
             {
                 var otherPlayer = _players[i];
                 pj.UserName = otherPlayer.Name;
-                ps.Id = (byte)otherPlayer.AssociatedPeer.Id;
-                ps.Health = otherPlayer.Health;
-                ps.Position = otherPlayer.Position;
-                ps.Rotation = otherPlayer.Rotation;
-                pj.InitialPlayerState = ps;
+                pj.InitialPlayerState = otherPlayer.NetworkState;
                 peer.Send(WritePacket(pj), DeliveryMethod.ReliableOrdered);
             }
         }
@@ -146,6 +169,12 @@ namespace Code.Server
         void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
             Debug.Log("[S] Player disconnected: " + disconnectInfo.Reason);
+
+            if (peer.Tag != null)
+            {
+                var plp = new PlayerLeavedPacket {Id = (byte)peer.Id};
+                _netManager.SendToAll(WritePacket(plp), DeliveryMethod.ReliableOrdered);
+            }
         }
 
         void INetEventListener.OnNetworkError(IPEndPoint endPoint, SocketError socketError)
