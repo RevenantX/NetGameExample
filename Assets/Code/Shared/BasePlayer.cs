@@ -2,39 +2,31 @@
 
 namespace Code.Shared
 {
-    public class BasePlayer
+    public abstract class BasePlayer
     {
         public readonly string Name;
 
         private float _speed = 3f;
+        private GameTimer _shootTimer = new GameTimer(0.2f);
+        private BasePlayerManager _playerManager;
         
         protected Vector2 _position;
         protected float _rotation;
         protected byte _health;
 
-        public bool IsAlive
-        {
-            get { return _health > 0; }
-        }
+        public const float Radius = 3f;
+        public bool IsAlive => _health > 0;
+        public byte Health => _health;
+        public Vector2 Position => _position;
+        public float Rotation => _rotation;
+        public readonly byte Id;
+        public int Ping;
 
-        public byte Health
+        protected BasePlayer(BasePlayerManager playerManager, string name, byte id)
         {
-            get { return _health; }
-        }
-
-        public Vector2 Position
-        {
-            get { return _position; }
-        }
-
-        public float Rotation
-        {
-            get { return _rotation; }
-        }
-
-        public BasePlayer(string name)
-        {
+            Id = id;
             Name = name;
+            _playerManager = playerManager;
         }
 
         public virtual void Spawn(Vector2 position)
@@ -42,6 +34,18 @@ namespace Code.Shared
             _position = position;
             _rotation = 0;
             _health = 100;
+        }
+
+        private void Shoot()
+        {
+            Vector2 dir = new Vector2(Mathf.Cos(_rotation), Mathf.Sin(_rotation));
+            var player = _playerManager.CastToPlayer(_position, dir, 100f, this);
+            OnShoot(_position, _position + dir * 100f, player);
+        }
+
+        protected virtual void OnShoot(Vector3 from, Vector3 to, BasePlayer hit)
+        {
+            
         }
 
         public virtual void ApplyInput(PlayerInputPacket command, float delta)
@@ -56,15 +60,25 @@ namespace Code.Shared
             if ((command.Keys & MovementKeys.Left) != 0)
                 velocity.x = -1f;
             if ((command.Keys & MovementKeys.Right) != 0)
-                velocity.x = 1f;
+                velocity.x = 1f;     
             
             _position += velocity.normalized * _speed * delta;
             _rotation = command.Rotation;
+
+            if ((command.Keys & MovementKeys.Fire) != 0)
+            {
+                if (_shootTimer.IsTimeElapsed)
+                {
+                    _shootTimer.Reset();
+                    Shoot();
+                }
+            }
+            
         }
 
         public virtual void Update(float delta)
         {
-            
+            _shootTimer.UpdateAsCooldown(delta);
         }
     }
 }

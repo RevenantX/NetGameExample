@@ -10,7 +10,8 @@ namespace Code.Shared
         Movement,
         Spawn,
         ServerState,
-        Serialized
+        Serialized,
+        Shoot
     }
     
     //Auto serializable packets
@@ -21,13 +22,14 @@ namespace Code.Shared
 
     public class JoinAcceptPacket
     {
-        public long Id { get; set; }
+        public byte Id { get; set; }
     }
 
     public class PlayerJoinedPacket
     {
         public string UserName { get; set; }
         public bool NewPlayer { get; set; }
+        public byte Health { get; set; }
 
         public PlayerState InitialPlayerState { get; set; }
     }
@@ -65,6 +67,30 @@ namespace Code.Shared
         Down = 1 << 4,
         Fire = 1 << 5
     }
+
+    public struct ShootPacket : INetSerializable
+    {
+        public byte FromPlayer;
+        public ushort CommandId;
+        public Vector2 Hit;
+        public ushort ServerTick;
+        
+        public void Serialize(NetDataWriter writer)
+        {
+            writer.Put(FromPlayer);
+            writer.Put(CommandId);
+            writer.Put(Hit);
+            writer.Put(ServerTick);
+        }
+
+        public void Deserialize(NetDataReader reader)
+        {
+            FromPlayer = reader.GetByte();
+            CommandId = reader.GetUShort();
+            Hit = reader.GetVector2();
+            ServerTick = reader.GetUShort();
+        }
+    }
     
     public struct PlayerInputPacket : INetSerializable
     {
@@ -95,17 +121,15 @@ namespace Code.Shared
         public byte Id;
         public Vector2 Position;
         public float Rotation;
-        public byte Health;
         public ushort ProcessedCommandId;
 
-        public const int Size = 1 + 8 + 4 + 1 + 2;
+        public const int Size = 1 + 8 + 4 + 2;
         
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(Id);
             writer.Put(Position);
             writer.Put(Rotation);
-            writer.Put(Health);
             writer.Put(ProcessedCommandId);
         }
 
@@ -114,7 +138,6 @@ namespace Code.Shared
             Id = reader.GetByte();
             Position = reader.GetVector2();
             Rotation = reader.GetFloat();
-            Health = reader.GetByte();
             ProcessedCommandId = reader.GetUShort();
         }
     }

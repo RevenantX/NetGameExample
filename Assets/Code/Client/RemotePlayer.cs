@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Code.Shared;
 using UnityEngine;
 
@@ -9,14 +8,14 @@ namespace Code.Client
         private readonly LiteRingBuffer<PlayerState> _buffer = new LiteRingBuffer<PlayerState>(30);
         private float _receivedTime;
         private float _timer;
-        private const float BufferTime = 0.2f; //200 milliseconds
+        private const float BufferTime = 0.1f; //100 milliseconds
         
-        public RemotePlayer(string name, PlayerState pjPacket) : base(name)
+        public RemotePlayer(ClientPlayerManager manager, string name, PlayerJoinedPacket pjPacket) : base(manager, name, pjPacket.InitialPlayerState.Id)
         {
-            _position = pjPacket.Position;
+            _position = pjPacket.InitialPlayerState.Position;
             _health = pjPacket.Health;
-            _rotation = pjPacket.Rotation;
-            _buffer.Add(pjPacket);
+            _rotation = pjPacket.InitialPlayerState.Rotation;
+            _buffer.Add(pjPacket.InitialPlayerState);
         }
 
         public override void Spawn(Vector2 position)

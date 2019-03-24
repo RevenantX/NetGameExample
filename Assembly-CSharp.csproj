@@ -59,16 +59,25 @@
   <ItemGroup>
     <Compile Include="Assets\Code\Client\ClientLogic.cs" />
     <Compile Include="Assets\Code\Client\ClientPlayer.cs" />
+    <Compile Include="Assets\Code\Client\ClientPlayerManager.cs" />
     <Compile Include="Assets\Code\Client\ClientPlayerView.cs" />
+    <Compile Include="Assets\Code\Client\IPlayerView.cs" />
+    <Compile Include="Assets\Code\Client\PlayerHandler.cs" />
     <Compile Include="Assets\Code\Client\RemotePlayer.cs" />
     <Compile Include="Assets\Code\Client\RemotePlayerView.cs" />
+    <Compile Include="Assets\Code\Client\ShootEffect.cs" />
     <Compile Include="Assets\Code\Client\UiController.cs" />
     <Compile Include="Assets\Code\Server\AntilagSystem.cs" />
     <Compile Include="Assets\Code\Server\ServerLogic.cs" />
     <Compile Include="Assets\Code\Server\ServerPlayer.cs" />
+    <Compile Include="Assets\Code\Server\ServerPlayerManager.cs" />
     <Compile Include="Assets\Code\Shared\BasePlayer.cs" />
+    <Compile Include="Assets\Code\Shared\BasePlayerManager.cs" />
+    <Compile Include="Assets\Code\Shared\Collisions.cs" />
     <Compile Include="Assets\Code\Shared\Extensions.cs" />
     <Compile Include="Assets\Code\Shared\GamePackets.cs" />
+    <Compile Include="Assets\Code\Shared\GamePool.cs" />
+    <Compile Include="Assets\Code\Shared\GameTimer.cs" />
     <Compile Include="Assets\Code\Shared\LiteRingBuffer.cs" />
     <Compile Include="Assets\Code\Shared\LogicTimer.cs" />
     <Compile Include="Assets\Code\Shared\NetworkGeneral.cs" />

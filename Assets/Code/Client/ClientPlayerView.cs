@@ -4,19 +4,20 @@ using UnityEngine.UI;
 
 namespace Code.Client
 {
-    public class ClientPlayerView : MonoBehaviour
+    public class ClientPlayerView : MonoBehaviour, IPlayerView
     {
         [SerializeField] private TextMesh _name;
         private ClientPlayer _player;
         private Camera _mainCamera;
 
-        public static void Create(ClientPlayerView prefab, ClientPlayer player)
+        public static ClientPlayerView Create(ClientPlayerView prefab, ClientPlayer player)
         {
             Quaternion rot = Quaternion.Euler(0f, player.Rotation, 0f);
             var obj = Instantiate(prefab, player.Position, rot);
             obj._player = player;
             obj._name.text = player.Name;
             obj._mainCamera = Camera.main;
+            return obj;
         }
 
         private void Update()
@@ -36,6 +37,11 @@ namespace Code.Client
             transform.position = Vector2.Lerp(_player.LastPosition, _player.Position, lerpT);
             float angle = Mathf.Lerp(_player.LastRotation, _player.Rotation, lerpT);
             transform.rotation = Quaternion.Euler(0f, 0f, angle * Mathf.Rad2Deg );
+        }
+        
+        public void Destroy()
+        {
+            //nothing
         }
     }
 }

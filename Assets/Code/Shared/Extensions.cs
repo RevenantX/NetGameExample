@@ -18,5 +18,10 @@ namespace Code.Shared
             v.y = reader.GetFloat();
             return v;
         }
+
+        public static T GetRandomElement<T>(this T[] array)
+        {
+            return array[Random.Range(0, array.Length)];
+        }
     }
 }

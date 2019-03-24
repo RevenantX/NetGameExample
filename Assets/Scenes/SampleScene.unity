@@ -259,7 +259,7 @@ MonoBehaviour:
   m_Script: {fileID: 1980459831, guid: f70555f144d8491a825f0804e09c671c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
+  m_UiScaleMode: 2
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 800, y: 600}
@@ -955,6 +955,8 @@ MonoBehaviour:
   _remotePlayerViewPrefab: {fileID: 2657010345741789178, guid: 286a2aeb6d53b6140a311cbe617d000f,
     type: 3}
   _debugText: {fileID: 1306777469}
+  _shootEffectPrefab: {fileID: 8525329206789753033, guid: 34cd9b45af10c374daabd0023264392f,
+    type: 3}
 --- !u!4 &1732463074
 Transform:
   m_ObjectHideFlags: 0

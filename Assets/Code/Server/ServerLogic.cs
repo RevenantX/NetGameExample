@@ -11,16 +11,16 @@ namespace Code.Server
     {
         private NetManager _netManager;
         private NetPacketProcessor _packetProcessor;
-        private ServerPlayer[] _players;
-        private int _playersCount;
-        private const int MaxPlayers = 8;
+
+        public const int MaxPlayers = 64;
         private LogicTimer _logicTimer;
         private readonly NetDataWriter _cachedWriter = new NetDataWriter();
-        private AntilagSystem _antilagSystem;
         private ushort _serverTick;
+        private ServerPlayerManager _playerManager;
 
         private PlayerInputPacket _cachedCommand = new PlayerInputPacket();
-        private ServerState _serverState = new ServerState();
+        private ServerState _serverState;
+        public ushort Tick => _serverTick;
 
         public void StartServer()
         {
@@ -33,13 +33,12 @@ namespace Code.Server
         private void Awake()
         {
             DontDestroyOnLoad(gameObject);
-            _antilagSystem = new AntilagSystem(60, MaxPlayers);
             _logicTimer = new LogicTimer(OnLogicUpdate);
-            _players = new ServerPlayer[MaxPlayers];
             _packetProcessor = new NetPacketProcessor();
+            _playerManager = new ServerPlayerManager(this);
             
             //register auto serializable vector2
-            _packetProcessor.RegisterNestedType((w, v) => w.Put(v), reader => reader.GetVector2());
+            _packetProcessor.RegisterNestedType((w, v) => w.Put(v), r => r.GetVector2());
            
             //register auto serializable PlayerState
             _packetProcessor.RegisterNestedType<PlayerState>();
@@ -60,37 +59,25 @@ namespace Code.Server
         private void OnLogicUpdate()
         {
             _serverTick = (ushort)((_serverTick + 1) % NetworkGeneral.MaxGameSequence);
-
-            if (_serverState.PlayerStates == null || _serverState.PlayerStates.Length < _playersCount)
-                _serverState.PlayerStates = new PlayerState[_playersCount];
-            
-            for (int i = 0; i < _playersCount; i++)
-            {
-                var p = _players[i];
-                p.Update(LogicTimer.FixedDelta);
-                _serverState.PlayerStates[i] = p.NetworkState;
-            }
-
+            _playerManager.LogicUpdate();
             if (_serverTick % 2 == 0)
-                SendServerState();
-        }
-
-        private void SendServerState()
-        {         
-            _serverState.Tick = _serverTick;
-            
-            for (int i = 0; i < _playersCount; i++)
             {
-                var p = _players[i]; 
-                int statesMax = p.AssociatedPeer.GetMaxSinglePacketSize(DeliveryMethod.Unreliable) - ServerState.HeaderSize;
-                statesMax /= PlayerState.Size;
+                _serverState.Tick = _serverTick;
+                _serverState.PlayerStates = _playerManager.PlayerStates;
+                int pCount = _playerManager.Count;
                 
-                for (int s = 0; s < (_playersCount-1)/statesMax + 1; s++)
-                {
-                    //TODO: change
-                    _serverState.PlayerStatesCount = _playersCount;
-                    _serverState.StartState = s * statesMax;
-                    p.AssociatedPeer.Send(WriteSerializable(PacketType.ServerState, _serverState), DeliveryMethod.Unreliable);
+                foreach(ServerPlayer p in _playerManager)
+                { 
+                    int statesMax = p.AssociatedPeer.GetMaxSinglePacketSize(DeliveryMethod.Unreliable) - ServerState.HeaderSize;
+                    statesMax /= PlayerState.Size;
+                
+                    for (int s = 0; s < (pCount-1)/statesMax + 1; s++)
+                    {
+                        //TODO: divide
+                        _serverState.PlayerStatesCount = pCount;
+                        _serverState.StartState = s * statesMax;
+                        p.AssociatedPeer.Send(WriteSerializable(PacketType.ServerState, _serverState), DeliveryMethod.Unreliable);
+                    }
                 }
             }
         }
@@ -120,14 +107,13 @@ namespace Code.Server
         private void OnJoinReceived(JoinPacket joinPacket, NetPeer peer)
         {
             Debug.Log("[S] Join packet received: " + joinPacket.UserName);
-            var player = new ServerPlayer(joinPacket.UserName, peer);
-            _players[_playersCount] = player;
-            _playersCount++;
+            var player = new ServerPlayer(_playerManager, joinPacket.UserName, peer);
+            _playerManager.AddPlayer(player);
 
             player.Spawn(new Vector2(Random.Range(-2f, 2f), Random.Range(-2f, 2f)));
 
             //Send join accept
-            var ja = new JoinAcceptPacket {Id = peer.Id};
+            var ja = new JoinAcceptPacket {Id = player.Id};
             peer.Send(WritePacket(ja), DeliveryMethod.ReliableOrdered);
 
             //Send to old players info about new player
@@ -139,9 +125,10 @@ namespace Code.Server
 
             //Send to new player info about old players
             pj.NewPlayer = false;
-            for (int i = 0; i < _playersCount - 1; i++)
+            foreach(ServerPlayer otherPlayer in _playerManager)
             {
-                var otherPlayer = _players[i];
+                if(otherPlayer == player)
+                    continue;
                 pj.UserName = otherPlayer.Name;
                 pj.InitialPlayerState = otherPlayer.NetworkState;
                 peer.Send(WritePacket(pj), DeliveryMethod.ReliableOrdered);
@@ -155,10 +142,15 @@ namespace Code.Server
             _cachedCommand.Deserialize(reader);
             var player = (ServerPlayer) peer.Tag;
             
-            bool antilagApplied = _antilagSystem.TryApplyAntilag(_players, _serverTick, peer.Id);
+            bool antilagApplied = _playerManager.EnableAntilag(player);
             player.ApplyInput(_cachedCommand, LogicTimer.FixedDelta);
             if(antilagApplied)
-                _antilagSystem.RevertAntilag(_players);
+                _playerManager.DisableAntilag();
+        }
+
+        public void SendShoot(ref ShootPacket sp)
+        {
+            _netManager.SendToAll(WriteSerializable(PacketType.Shoot, sp), DeliveryMethod.ReliableUnordered);
         }
 
         void INetEventListener.OnPeerConnected(NetPeer peer)
@@ -210,7 +202,11 @@ namespace Code.Server
 
         void INetEventListener.OnNetworkLatencyUpdate(NetPeer peer, int latency)
         {
-
+            if (peer.Tag != null)
+            {
+                var p = (ServerPlayer) peer.Tag;
+                p.Ping = latency;
+            }
         }
 
         void INetEventListener.OnConnectionRequest(ConnectionRequest request)

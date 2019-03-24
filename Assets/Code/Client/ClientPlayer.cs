@@ -6,9 +6,9 @@ namespace Code.Client
 { 
     public class ClientPlayer : BasePlayer
     {
-        public readonly long Id;
         private PlayerInputPacket _nextCommand;
         private readonly ClientLogic _clientLogic;
+        private readonly ClientPlayerManager _playerManager;
         private readonly LiteRingBuffer<PlayerInputPacket> _predictionPlayerStates;
         private ushort _lastServerTick;
         private const int MaxStoredCommands = 60;
@@ -18,14 +18,19 @@ namespace Code.Client
 
         public int StoredCommands => _predictionPlayerStates.Count;
 
-        public ClientPlayer(ClientLogic clientLogic, string name, long id) : base(name)
+        public ClientPlayer(ClientLogic clientLogic, ClientPlayerManager manager, string name, byte id) : base(manager, name, id)
         {
+            _playerManager = manager;
             _predictionPlayerStates = new LiteRingBuffer<PlayerInputPacket>(MaxStoredCommands);
-            Id = id;
             _clientLogic = clientLogic;
             
             _predictionPlayerStates.FastClear();
             _predictionPlayerStates.Add(new PlayerInputPacket { Id = 0 });
+        }
+
+        protected override void OnShoot(Vector3 from, Vector3 to, BasePlayer hit)
+        {
+            _playerManager.CallShoot(from, to);
         }
 
         public void ReceiveServerState(ServerState serverState, PlayerState ourState)
@@ -37,7 +42,6 @@ namespace Code.Client
             //sync
             _position = ourState.Position;
             _rotation = ourState.Rotation;
-            _health = ourState.Health;
             if (_predictionPlayerStates.Count == 0)
                 return;
 
