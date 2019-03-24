@@ -224,7 +224,7 @@ namespace Code.Client
 
         public void Connect(string ip)
         {
-            _netManager.Connect(ip, 9000, "ExampleGame");
+            _netManager.Connect(ip, 10515, "ExampleGame");
         }
     }
 }

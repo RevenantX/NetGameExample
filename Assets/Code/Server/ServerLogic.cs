@@ -26,7 +26,7 @@ namespace Code.Server
         {
             if (_netManager.IsRunning)
                 return;
-            _netManager.Start(9000);
+            _netManager.Start(10515);
             _logicTimer.Start();
         }
 
