@@ -32,6 +32,7 @@ namespace Code.Client
         private ushort _lastServerTick;
         private NetPeer _server;
         private ClientPlayerManager _playerManager;
+        private int _ping;
 
         public static LogicTimer LogicTimer { get; private set; }
 
@@ -79,7 +80,9 @@ namespace Code.Client
             if (_playerManager.OurPlayer != null)
                 _debugText.text =
                     string.Format(
-                        $"LastServerTick: {_lastServerTick}\nStoredCommands: {_playerManager.OurPlayer.StoredCommands}");
+                        $"LastServerTick: {_lastServerTick}\n" + 
+                        $"StoredCommands: {_playerManager.OurPlayer.StoredCommands}\n" + 
+                        $"Ping: {_ping}");
             else
                 _debugText.text = "Disconnected";
         }
@@ -211,7 +214,7 @@ namespace Code.Client
 
         void INetEventListener.OnNetworkLatencyUpdate(NetPeer peer, int latency)
         {
-
+            _ping = latency;
         }
 
         void INetEventListener.OnConnectionRequest(ConnectionRequest request)

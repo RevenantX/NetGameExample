@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace Code.Shared
 {
     public static class Collisions

@@ -14,7 +14,7 @@ namespace Code.Shared
         protected float _rotation;
         protected byte _health;
 
-        public const float Radius = 3f;
+        public const float Radius = 0.5f;
         public bool IsAlive => _health > 0;
         public byte Health => _health;
         public Vector2 Position => _position;
@@ -38,9 +38,11 @@ namespace Code.Shared
 
         private void Shoot()
         {
+            const float MaxLength = 20f;
             Vector2 dir = new Vector2(Mathf.Cos(_rotation), Mathf.Sin(_rotation));
-            var player = _playerManager.CastToPlayer(_position, dir, 100f, this);
-            OnShoot(_position, _position + dir * 100f, player);
+            var player = _playerManager.CastToPlayer(_position, dir, MaxLength, this);
+            Vector2 target = _position + dir * (player != null ? Vector2.Distance(_position, player._position) : MaxLength);
+            OnShoot(_position, target, player);
         }
 
         protected virtual void OnShoot(Vector3 from, Vector3 to, BasePlayer hit)
