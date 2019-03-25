@@ -24,11 +24,6 @@ namespace Code.Client
                 yield return ph.Value.Player;
         }
 
-        public void Update()
-        {
-            
-        }
-
         public void ApplyServerState(ref ServerState serverState)
         {
             for (int i = 0; i < serverState.PlayerStatesCount; i++)
@@ -49,9 +44,10 @@ namespace Code.Client
             }
         }
 
-        public void CallShoot(Vector2 from, Vector2 to)
+        public override void OnShoot(BasePlayer from, Vector2 to, BasePlayer hit)
         {
-            _clientLogic.SpawnShoot(from, to);
+            if(from == _clientPlayer)
+                _clientLogic.SpawnShoot(from.Position, to);
         }
 
         public BasePlayer GetById(byte id)

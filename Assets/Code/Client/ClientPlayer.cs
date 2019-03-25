@@ -28,11 +28,6 @@ namespace Code.Client
             _predictionPlayerStates.Add(new PlayerInputPacket { Id = 0 });
         }
 
-        protected override void OnShoot(Vector3 from, Vector3 to, BasePlayer hit)
-        {
-            _playerManager.CallShoot(from, to);
-        }
-
         public void ReceiveServerState(ServerState serverState, PlayerState ourState)
         {
             if (serverState.Tick == _lastServerTick)

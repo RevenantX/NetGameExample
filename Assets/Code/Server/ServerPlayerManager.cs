@@ -45,12 +45,13 @@ namespace Code.Server
             }
         }
 
-        public void SendShoot(ServerPlayer player, Vector2 from, Vector2 to, BasePlayer hit)
+        public override void OnShoot(BasePlayer from, Vector2 to, BasePlayer hit)
         {
+            var serverPlayer = (ServerPlayer) from;
             ShootPacket sp = new ShootPacket
             {
-                FromPlayer = player.Id,
-                CommandId = player.NetworkState.ProcessedCommandId,
+                FromPlayer = serverPlayer.Id,
+                CommandId = serverPlayer.NetworkState.ProcessedCommandId,
                 ServerTick = _serverLogic.Tick,
                 Hit = to
             };

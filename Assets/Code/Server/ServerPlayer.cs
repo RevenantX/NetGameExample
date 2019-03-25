@@ -24,11 +24,6 @@ namespace Code.Server
             base.ApplyInput(command, delta);
         }
 
-        protected override void OnShoot(Vector3 from, Vector3 to, BasePlayer hit)
-        {
-            _playerManager.SendShoot(this, from, to, hit);
-        }
-
         public override void Update(float delta)
         {
             base.Update(delta);

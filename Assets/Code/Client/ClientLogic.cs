@@ -76,7 +76,6 @@ namespace Code.Client
         {
             _netManager.PollEvents();
             LogicTimer.Update();
-            _playerManager.Update();
             if (_playerManager.OurPlayer != null)
                 _debugText.text =
                     string.Format(

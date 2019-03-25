@@ -34,5 +34,6 @@ namespace Code.Shared
         }
 
         public abstract void LogicUpdate();
+        public abstract void OnShoot(BasePlayer from, Vector2 to, BasePlayer hit);
     }
 }
