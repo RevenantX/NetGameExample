@@ -9,5 +9,6 @@ Done:
 * Buffered linear interpolation for remote players
 
 TODO:
+* Proper player disconnect
 * Shooting
 * Maybe some items
