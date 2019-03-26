@@ -2,10 +2,21 @@ using Code.Shared;
 using UnityEngine;
 
 namespace Code.Client
-{
+{   
     public class RemotePlayer : BasePlayer
     {
-        private readonly LiteRingBuffer<PlayerState> _buffer = new LiteRingBuffer<PlayerState>(30);
+        struct IncomingData
+        {
+            public PlayerState State;
+            public ushort Tick;
+
+            public IncomingData(PlayerState state, ushort serverTick)
+            {
+                State = state;
+                Tick = serverTick;
+            }
+        }
+        private readonly LiteRingBuffer<IncomingData> _buffer = new LiteRingBuffer<IncomingData>(30);
         private float _receivedTime;
         private float _timer;
         private const float BufferTime = 0.1f; //100 milliseconds
@@ -15,7 +26,7 @@ namespace Code.Client
             _position = pjPacket.InitialPlayerState.Position;
             _health = pjPacket.Health;
             _rotation = pjPacket.InitialPlayerState.Rotation;
-            _buffer.Add(pjPacket.InitialPlayerState);
+            _buffer.Add(new IncomingData(pjPacket.InitialPlayerState, pjPacket.ServerTick));
         }
 
         public override void Spawn(Vector2 position)
@@ -28,13 +39,13 @@ namespace Code.Client
         {
             if (_receivedTime < BufferTime || _buffer.Count < 2)
                 return;
-            var stateA = _buffer[0];
-            var stateB = _buffer[1];
+            var dataA = _buffer[0];
+            var dataB = _buffer[1];
             
-            float lerpTime = NetworkGeneral.SeqDiff(stateB.ProcessedCommandId, stateA.ProcessedCommandId)*LogicTimer.FixedDelta;
+            float lerpTime = NetworkGeneral.SeqDiff(dataB.Tick, dataA.Tick)*LogicTimer.FixedDelta;
             float t = _timer / lerpTime;
-            _position = Vector2.Lerp(stateA.Position, stateB.Position, t);
-            _rotation = Mathf.Lerp(stateA.Rotation, stateB.Rotation, t);
+            _position = Vector2.Lerp(dataA.State.Position, dataB.State.Position, t);
+            _rotation = Mathf.Lerp(dataA.State.Rotation, dataB.State.Rotation, t);
             _timer += delta;
             if (_timer > lerpTime)
             {
@@ -44,10 +55,10 @@ namespace Code.Client
             }
         }
 
-        public void OnPlayerState(PlayerState state)
+        public void OnPlayerState(ushort serverTick, PlayerState state)
         {
             //old command
-            int diff = NetworkGeneral.SeqDiff(state.ProcessedCommandId, _buffer.Last.ProcessedCommandId);
+            int diff = NetworkGeneral.SeqDiff(serverTick, _buffer.Last.Tick);
             if (diff <= 0)
                 return;
 
@@ -59,7 +70,7 @@ namespace Code.Client
                 _receivedTime = 0f;
                 _buffer.FastClear();
             }
-            _buffer.Add(state);
+            _buffer.Add(new IncomingData(state, serverTick));
         }
     }
 }

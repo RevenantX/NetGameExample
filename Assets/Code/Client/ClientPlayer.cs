@@ -40,7 +40,9 @@ namespace Code.Client
             if (_predictionPlayerStates.Count == 0)
                 return;
 
-            int diff = NetworkGeneral.SeqDiff(ourState.ProcessedCommandId,_predictionPlayerStates.First.Id);
+            ushort lastProcessedCommand = serverState.LastProcessedCommand;
+            int diff = NetworkGeneral.SeqDiff(lastProcessedCommand,_predictionPlayerStates.First.Id);
+            
 
             //apply prediction
             if (diff >= 0 && diff < _predictionPlayerStates.Count)
@@ -51,10 +53,10 @@ namespace Code.Client
             }
             else
             {
-                Debug.Log($"[C] Player input lag: {_predictionPlayerStates.First.Id} {ourState.ProcessedCommandId}");
+                Debug.Log($"[C] Player input lag: {_predictionPlayerStates.First.Id} {lastProcessedCommand}");
                 //lag
                 _predictionPlayerStates.FastClear();
-                _nextCommand.Id = ourState.ProcessedCommandId;
+                _nextCommand.Id = lastProcessedCommand;
             }
         }
 

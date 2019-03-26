@@ -51,7 +51,7 @@ namespace Code.Server
             ShootPacket sp = new ShootPacket
             {
                 FromPlayer = serverPlayer.Id,
-                CommandId = serverPlayer.NetworkState.ProcessedCommandId,
+                CommandId = serverPlayer.LastProcessedCommandId,
                 ServerTick = _serverLogic.Tick,
                 Hit = to
             };

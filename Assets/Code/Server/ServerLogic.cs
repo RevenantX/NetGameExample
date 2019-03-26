@@ -121,6 +121,7 @@ namespace Code.Server
             pj.UserName = joinPacket.UserName;
             pj.NewPlayer = true;
             pj.InitialPlayerState = player.NetworkState;
+            pj.ServerTick = _serverTick;
             _netManager.SendToAll(WritePacket(pj), DeliveryMethod.ReliableOrdered, peer);
 
             //Send to new player info about old players

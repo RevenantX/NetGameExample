@@ -9,6 +9,7 @@ namespace Code.Server
         private readonly ServerPlayerManager _playerManager;
         public readonly NetPeer AssociatedPeer;
         public PlayerState NetworkState;
+        public ushort LastProcessedCommandId { get; private set; }
         
         public ServerPlayer(ServerPlayerManager playerManager, string name, NetPeer peer) : base(playerManager, name, (byte)peer.Id)
         {
@@ -20,7 +21,7 @@ namespace Code.Server
 
         public override void ApplyInput(PlayerInputPacket command, float delta)
         {
-            NetworkState.ProcessedCommandId = command.Id;
+            LastProcessedCommandId = command.Id;
             base.ApplyInput(command, delta);
         }
 

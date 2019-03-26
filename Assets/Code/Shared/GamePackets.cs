@@ -30,6 +30,7 @@ namespace Code.Shared
         public string UserName { get; set; }
         public bool NewPlayer { get; set; }
         public byte Health { get; set; }
+        public ushort ServerTick { get; set; }
 
         public PlayerState InitialPlayerState { get; set; }
     }
@@ -121,16 +122,14 @@ namespace Code.Shared
         public byte Id;
         public Vector2 Position;
         public float Rotation;
-        public ushort ProcessedCommandId;
 
-        public const int Size = 1 + 8 + 4 + 2;
+        public const int Size = 1 + 8 + 4;
         
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(Id);
             writer.Put(Position);
             writer.Put(Rotation);
-            writer.Put(ProcessedCommandId);
         }
 
         public void Deserialize(NetDataReader reader)
@@ -138,23 +137,25 @@ namespace Code.Shared
             Id = reader.GetByte();
             Position = reader.GetVector2();
             Rotation = reader.GetFloat();
-            ProcessedCommandId = reader.GetUShort();
         }
     }
 
     public struct ServerState : INetSerializable
     {
         public ushort Tick;
+        public ushort LastProcessedCommand;
+        
         public int PlayerStatesCount;
         public int StartState; //server only
         public PlayerState[] PlayerStates;
         
         //tick
-        public const int HeaderSize = sizeof(ushort);
+        public const int HeaderSize = sizeof(ushort)*2;
         
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(Tick);
+            writer.Put(LastProcessedCommand);
             
             for (int i = 0; i < PlayerStatesCount; i++)
                 PlayerStates[StartState + i].Serialize(writer);
@@ -163,6 +164,7 @@ namespace Code.Shared
         public void Deserialize(NetDataReader reader)
         {
             Tick = reader.GetUShort();
+            LastProcessedCommand = reader.GetUShort();
             
             PlayerStatesCount = reader.AvailableBytes / PlayerState.Size;
             if (PlayerStates == null || PlayerStates.Length < PlayerStatesCount)

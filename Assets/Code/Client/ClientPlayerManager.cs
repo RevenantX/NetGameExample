@@ -39,7 +39,7 @@ namespace Code.Client
                 else
                 {
                     var rp = (RemotePlayer)handler.Player;
-                    rp.OnPlayerState(state);
+                    rp.OnPlayerState(serverState.Tick, state);
                 }
             }
         }
