@@ -74,6 +74,7 @@ namespace Code.Server
                     for (int s = 0; s < (pCount-1)/statesMax + 1; s++)
                     {
                         //TODO: divide
+                        _serverState.LastProcessedCommand = p.LastProcessedCommandId;
                         _serverState.PlayerStatesCount = pCount;
                         _serverState.StartState = s * statesMax;
                         p.AssociatedPeer.Send(WriteSerializable(PacketType.ServerState, _serverState), DeliveryMethod.Unreliable);
