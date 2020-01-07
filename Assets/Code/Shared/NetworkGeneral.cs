@@ -12,11 +12,7 @@ namespace Code.Shared
 
         public static int SeqDiff(int a, int b)
         {
-            return Diff(a, b, HalfMaxGameSequence);
-        }
-        public static int Diff(int a, int b, int halfMax)
-        {
-            return (a - b + halfMax*3) % (halfMax*2) - halfMax;
+            return (a - b) % MaxGameSequence;
         }
     }
 }
