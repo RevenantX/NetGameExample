@@ -60,6 +60,15 @@ namespace Code.Server
 
         public void AddPlayer(ServerPlayer player)
         {
+            for (int i = 0; i < _playersCount; i++)
+            {
+                if (_players[i].Id == player.Id)
+                {
+                    _players[i] = player;
+                    return;
+                }
+            }
+
             _players[_playersCount] = player;
             _playersCount++;
         }
