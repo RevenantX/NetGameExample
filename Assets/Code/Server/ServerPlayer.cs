@@ -21,6 +21,8 @@ namespace Code.Server
 
         public override void ApplyInput(PlayerInputPacket command, float delta)
         {
+            if (NetworkGeneral.SeqDiff(command.Id, LastProcessedCommandId) <= 0)
+                return;
             LastProcessedCommandId = command.Id;
             base.ApplyInput(command, delta);
         }
@@ -30,6 +32,7 @@ namespace Code.Server
             base.Update(delta);
             NetworkState.Position = _position;
             NetworkState.Rotation = _rotation;
+            NetworkState.Tick = LastProcessedCommandId;
             
             //Draw cross as server player
             const float sz = 0.1f;

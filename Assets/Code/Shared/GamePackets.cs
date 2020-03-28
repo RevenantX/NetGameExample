@@ -122,14 +122,16 @@ namespace Code.Shared
         public byte Id;
         public Vector2 Position;
         public float Rotation;
+        public ushort Tick;
 
-        public const int Size = 1 + 8 + 4;
+        public const int Size = 1 + 8 + 4 + 2;
         
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(Id);
             writer.Put(Position);
             writer.Put(Rotation);
+            writer.Put(Tick);
         }
 
         public void Deserialize(NetDataReader reader)
@@ -137,6 +139,7 @@ namespace Code.Shared
             Id = reader.GetByte();
             Position = reader.GetVector2();
             Rotation = reader.GetFloat();
+            Tick = reader.GetUShort();
         }
     }
 
