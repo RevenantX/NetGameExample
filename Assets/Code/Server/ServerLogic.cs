@@ -168,8 +168,12 @@ namespace Code.Server
 
             if (peer.Tag != null)
             {
-                var plp = new PlayerLeavedPacket {Id = (byte)peer.Id};
-                _netManager.SendToAll(WritePacket(plp), DeliveryMethod.ReliableOrdered);
+                byte playerId = (byte)peer.Id;
+                if (_playerManager.RemovePlayer(playerId))
+                {
+                    var plp = new PlayerLeavedPacket { Id = (byte)peer.Id };
+                    _netManager.SendToAll(WritePacket(plp), DeliveryMethod.ReliableOrdered);
+                }
             }
         }
 

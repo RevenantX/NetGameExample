@@ -82,5 +82,20 @@ namespace Code.Server
                 PlayerStates[i] = p.NetworkState;
             }
         }
+
+        public bool RemovePlayer(byte playerId)
+        {
+            for (int i = 0; i < _playersCount; i++)
+            {
+                if (_players[i].Id == playerId)
+                {
+                    _playersCount--;
+                    _players[i] = _players[_playersCount];
+                    _players[_playersCount] = null;
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }
