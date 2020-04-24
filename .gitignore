@@ -6,3 +6,10 @@ Build/
 .vs/
 .idea/
 .git/
+*.DotSettings.user
+*.csproj.user
+*.sln 
+*.csproj
+*.v11.suo
+*.suo
+*.userprefs
