@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using Code.Client;
 using Code.Shared;
 using LiteNetLib;
 using LiteNetLib.Utils;
@@ -18,7 +16,8 @@ namespace Code.Client
         [SerializeField] private RemotePlayerView _remotePlayerViewPrefab;
         [SerializeField] private Text _debugText;
         [SerializeField] private ShootEffect _shootEffectPrefab;
-        
+
+        private Action<DisconnectInfo> _onDisconnected;
         private GamePool<ShootEffect> _shootsPool;
         
         private NetManager _netManager;
@@ -62,7 +61,8 @@ namespace Code.Client
             _packetProcessor.SubscribeReusable<PlayerLeavedPacket>(OnPlayerLeaved);
             _netManager = new NetManager(this)
             {
-                AutoRecycle = true
+                AutoRecycle = true,
+                IPv6Enabled = false
             };
             _netManager.Start();
         }
@@ -132,6 +132,7 @@ namespace Code.Client
         private void OnJoinAccept(JoinAcceptPacket packet)
         {
             Debug.Log("[C] Join accept. Received player id: " + packet.Id);
+            _lastServerTick = packet.ServerTick;
             var clientPlayer = new ClientPlayer(this, _playerManager, _userName, packet.Id);
             var view = ClientPlayerView.Create(_clientPlayerViewPrefab, clientPlayer);
             _playerManager.AddClientPlayer(clientPlayer, view);
@@ -168,9 +169,15 @@ namespace Code.Client
 
         void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
+            _playerManager.Clear();
             _server = null;
             LogicTimer.Stop();
             Debug.Log("[C] Disconnected from server: " + disconnectInfo.Reason);
+            if (_onDisconnected != null)
+            {
+                _onDisconnected(disconnectInfo);
+                _onDisconnected = null;
+            }
         }
 
         void INetEventListener.OnNetworkError(IPEndPoint endPoint, SocketError socketError)
@@ -221,8 +228,9 @@ namespace Code.Client
             request.Reject();
         }
 
-        public void Connect(string ip)
+        public void Connect(string ip, Action<DisconnectInfo> onDisconnected)
         {
+            _onDisconnected = onDisconnected;
             _netManager.Connect(ip, 10515, "ExampleGame");
         }
     }

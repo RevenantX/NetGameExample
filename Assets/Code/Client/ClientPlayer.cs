@@ -25,9 +25,6 @@ namespace Code.Client
             _playerManager = manager;
             _predictionPlayerStates = new LiteRingBuffer<PlayerInputPacket>(MaxStoredCommands);
             _clientLogic = clientLogic;
-            
-            _predictionPlayerStates.FastClear();
-            _predictionPlayerStates.Add(new PlayerInputPacket { Id = 0 });
         }
 
         public void ReceiveServerState(ServerState serverState, PlayerState ourState)

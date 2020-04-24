@@ -1,6 +1,4 @@
-using Code.Shared;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Code.Client
 {
@@ -41,7 +39,7 @@ namespace Code.Client
         
         public void Destroy()
         {
-            //nothing
+            Destroy(gameObject);
         }
     }
 }

@@ -4,13 +4,31 @@ using UnityEngine;
 
 namespace Code.Client
 {
+    public struct PlayerHandler
+    {
+        public readonly BasePlayer Player;
+        public readonly IPlayerView View;
+
+        public PlayerHandler(BasePlayer player, IPlayerView view)
+        {
+            Player = player;
+            View = view;
+        }
+
+        public void Update(float delta)
+        {
+            Player.Update(delta);
+        }
+    }
+
     public class ClientPlayerManager : BasePlayerManager
     {
         private readonly Dictionary<byte, PlayerHandler> _players;
         private readonly ClientLogic _clientLogic;
         private ClientPlayer _clientPlayer;
+
         public ClientPlayer OurPlayer => _clientPlayer;
-        
+        public override int Count => _players.Count;
 
         public ClientPlayerManager(ClientLogic clientLogic)
         {
@@ -72,8 +90,6 @@ namespace Code.Client
                 kv.Value.Update(LogicTimer.FixedDelta);
         }
 
-        public override int Count => _players.Count;
-
         public void AddClientPlayer(ClientPlayer player, ClientPlayerView view)
         {
             _clientPlayer = player;
@@ -83,6 +99,13 @@ namespace Code.Client
         public void AddPlayer(RemotePlayer player, RemotePlayerView view)
         {
             _players.Add(player.Id, new PlayerHandler(player, view));
+        }
+
+        public void Clear()
+        {
+            foreach (var p in _players.Values)
+                p.View.Destroy();
+            _players.Clear();
         }
     }
 }

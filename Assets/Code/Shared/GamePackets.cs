@@ -1,5 +1,4 @@
 using System;
-using Code.Server;
 using LiteNetLib.Utils;
 using UnityEngine;
 
@@ -23,6 +22,7 @@ namespace Code.Shared
     public class JoinAcceptPacket
     {
         public byte Id { get; set; }
+        public ushort ServerTick { get; set; }
     }
 
     public class PlayerJoinedPacket
@@ -31,7 +31,6 @@ namespace Code.Shared
         public bool NewPlayer { get; set; }
         public byte Health { get; set; }
         public ushort ServerTick { get; set; }
-
         public PlayerState InitialPlayerState { get; set; }
     }
 
@@ -172,7 +171,7 @@ namespace Code.Shared
             PlayerStatesCount = reader.AvailableBytes / PlayerState.Size;
             if (PlayerStates == null || PlayerStates.Length < PlayerStatesCount)
                 PlayerStates = new PlayerState[PlayerStatesCount];
-            for (int i = 0; i < PlayerStates.Length; i++)
+            for (int i = 0; i < PlayerStatesCount; i++)
                 PlayerStates[i].Deserialize(reader);
         }
     }

@@ -114,15 +114,17 @@ namespace Code.Server
             player.Spawn(new Vector2(Random.Range(-2f, 2f), Random.Range(-2f, 2f)));
 
             //Send join accept
-            var ja = new JoinAcceptPacket {Id = player.Id};
+            var ja = new JoinAcceptPacket { Id = player.Id, ServerTick = _serverTick };
             peer.Send(WritePacket(ja), DeliveryMethod.ReliableOrdered);
 
             //Send to old players info about new player
-            var pj = new PlayerJoinedPacket();
-            pj.UserName = joinPacket.UserName;
-            pj.NewPlayer = true;
-            pj.InitialPlayerState = player.NetworkState;
-            pj.ServerTick = _serverTick;
+            var pj = new PlayerJoinedPacket
+            {
+                UserName = joinPacket.UserName,
+                NewPlayer = true,
+                InitialPlayerState = player.NetworkState,
+                ServerTick = _serverTick
+            };
             _netManager.SendToAll(WritePacket(pj), DeliveryMethod.ReliableOrdered, peer);
 
             //Send to new player info about old players

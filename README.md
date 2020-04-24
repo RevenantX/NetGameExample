@@ -7,8 +7,8 @@ Done:
 * Authoritative server
 * Client-side input prediction
 * Buffered linear interpolation for remote players
+* Proper player disconnect
 
 TODO:
-* Proper player disconnect
 * Shooting
 * Maybe some items

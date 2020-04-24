@@ -11,6 +11,7 @@ namespace Code.Client
         [SerializeField] private ClientLogic _clientLogic;
         [SerializeField] private ServerLogic _serverLogic;
         [SerializeField] private InputField _ipField;
+        [SerializeField] private Text _disconnectInfoField;
 
         private void Awake()
         {
@@ -20,14 +21,20 @@ namespace Code.Client
         public void OnHostClick()
         {
             _serverLogic.StartServer();
-            _clientLogic.Connect("localhost");
             _uiObject.SetActive(false);
+            _clientLogic.Connect("localhost", OnDisconnected);
+        }
+
+        private void OnDisconnected(DisconnectInfo info)
+        {
+            _uiObject.SetActive(true);
+            _disconnectInfoField.text = info.Reason.ToString();
         }
 
         public void OnConnectClick()
         {
-            _clientLogic.Connect(_ipField.text);
             _uiObject.SetActive(false);
+            _clientLogic.Connect(_ipField.text, OnDisconnected);
         }
     }
 }
