@@ -26,7 +26,7 @@ namespace Code.Shared
         {
             _lastTime = 0;
             _accumulator = 0.0;
-            _stopwatch.Start();
+            _stopwatch.Restart();
         }
 
         public void Stop()
