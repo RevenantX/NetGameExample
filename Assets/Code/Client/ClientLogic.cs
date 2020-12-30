@@ -62,7 +62,7 @@ namespace Code.Client
             _netManager = new NetManager(this)
             {
                 AutoRecycle = true,
-                IPv6Enabled = false
+                IPv6Enabled = IPv6Mode.Disabled
             };
             _netManager.Start();
         }
