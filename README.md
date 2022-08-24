@@ -8,7 +8,4 @@ Done:
 * Client-side input prediction
 * Buffered linear interpolation for remote players
 * Proper player disconnect
-
-TODO:
 * Shooting
-* Maybe some items
